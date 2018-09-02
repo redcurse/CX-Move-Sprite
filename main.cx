@@ -1,0 +1,82 @@
+package main
+
+// *************************************
+// START - FPS Manager
+// *************************************
+type FpsManager struct {
+    currentTime f64
+    previousTime f64
+    timer f64
+    ticker f64
+    fpsCounter i32
+    currentFps i32
+    showFps bool
+}
+
+func createFpsManager(ticker f64)(fpsManager FpsManager) {
+    var manager FpsManager
+    manager.currentTime = glfw.GetTime()
+    manager.previousTime = manager.currentTime
+    manager.timer = 1.0D
+    manager.ticker = ticker
+    manager.fpsCounter = 0
+    manager.currentFps = 0
+    manager.showFps = true
+
+    fpsManager = manager
+}
+
+func updateFpsManager(manager FpsManager)(fpsManager FpsManager) {
+    manager.currentTime = glfw.GetTime()
+    manager.previousTime = manager.currentTime
+    manager.fpsCounter = i32.add(manager.fpsCounter, 1)
+    manager.timer = 0
+
+    if manager.currentTime - manager.timer > manager.ticker {
+        manager.timer = manager.timer + manager.ticker
+        manager.currentFps = f64.i32(i32.f64(manager.fpsCounter) / manager.ticker)
+        if manager.showFps {
+            i32.print(manager.currentFps)
+        }
+        manager.fpsCounter = 0
+    }
+
+    fpsManager = manager
+}
+// *************************************
+// END - FPS Manager
+// *************************************
+
+type Window struct {
+    Height i32
+    Width i32
+}
+
+func initGlfw (window Window) {
+    glfw.Init()
+    glfw.WindowHint(glfw.Resizable, glfw.False)
+    glfw.CreateWindow("window", window.Width, window.Height, "Game Test - CX")
+    glfw.MakeContextCurrent("window")
+}
+
+func startGame() {
+    var fpsManager FpsManager
+    var fpsTicker f64 = 1.0D
+    fpsManager = createFpsManager(fpsTicker)
+
+    for bool.not(glfw.ShouldClose("window")) {
+        fpsManager = updateFpsManager(fpsManager)
+
+        glfw.PollEvents()
+        glfw.SwapBuffers("window")
+    }
+}
+
+func main() {
+    var window Window
+    window = Window {Height: 748,Width: 1024}
+
+    initGlfw(window)
+
+    startGame()
+}
