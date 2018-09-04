@@ -1,75 +1,213 @@
 package main
+import "glfw"
+import "gl"
+import "os"
 
 // *************************************
-// START - FPS Manager
+// START - Loop Tracker
 // *************************************
-type FpsManager struct {
-    currentTime f64
+type LoopTracker struct {
+    loopName str
+    deltaTime f64
     previousTime f64
     timer f64
     ticker f64
     fpsCounter i32
-    currentFps i32
-    showFps bool
+    currentLoopsPerSecond i32
+    showLoopsPerSecond bool
 }
 
-func createFpsManager(ticker f64)(fpsManager FpsManager) {
-    var manager FpsManager
-    manager.currentTime = glfw.GetTime()
-    manager.previousTime = manager.currentTime
-    manager.timer = 1.0D
-    manager.ticker = ticker
-    manager.fpsCounter = 0
-    manager.currentFps = 0
-    manager.showFps = true
+func createLoopTracker(ticker f64, loopName str)(loopTracker LoopTracker) {
+    var tracker LoopTracker
+    tracker.loopName = loopName
+    tracker.timer = 1.0D
+    tracker.ticker = ticker
+    tracker.fpsCounter = 0
+    tracker.currentLoopsPerSecond = 0
+    tracker.showLoopsPerSecond = true
 
-    fpsManager = manager
+    loopTracker = tracker
 }
 
-func updateFpsManager(manager FpsManager)(fpsManager FpsManager) {
-    manager.currentTime = glfw.GetTime()
-    manager.previousTime = manager.currentTime
-    manager.fpsCounter = i32.add(manager.fpsCounter, 1)
-    manager.timer = 0
+func updateLoopTracker(tracker LoopTracker, currentTime f64)(loopTracker LoopTracker) {
+    tracker.deltaTime = currentTime - tracker.previousTime
+    tracker.previousTime = currentTime
+    tracker.fpsCounter = tracker.fpsCounter + 1
 
-    if manager.currentTime - manager.timer > manager.ticker {
-        manager.timer = manager.timer + manager.ticker
-        manager.currentFps = f64.i32(i32.f64(manager.fpsCounter) / manager.ticker)
-        if manager.showFps {
-            i32.print(manager.currentFps)
+    if currentTime - tracker.timer > tracker.ticker {
+        tracker.timer = tracker.timer + tracker.ticker
+        tracker.currentLoopsPerSecond = f64.i32(i32.f64(tracker.fpsCounter) / tracker.ticker)
+        if tracker.showLoopsPerSecond {
+            printf("%s loops per second: %d \n", tracker.loopName, tracker.currentLoopsPerSecond)
         }
-        manager.fpsCounter = 0
+        tracker.fpsCounter = 0
     }
 
-    fpsManager = manager
+    loopTracker = tracker
 }
 // *************************************
-// END - FPS Manager
+// END - Loop Tracker
 // *************************************
 
+
+// *************************************
+// START - Loop Limiter
+// *************************************
+type LoopLimiter struct {
+    previousTime f64
+    delta f64
+    limit i32
+    limitReached bool
+    enabled bool
+}
+
+func createLoopLimiter(limit i32, enabled bool)(loopLimiter LoopLimiter) {
+    var limiter LoopLimiter
+    limiter.limit = limit
+    limiter.enabled = enabled
+    loopLimiter = limiter
+}
+
+func updateLoopLimiter(limiter LoopLimiter, currentTime f64)(loopLimiter LoopLimiter) {
+    if limiter.enabled {
+        var fractionOfSecond f64 = 1.0D / i32.f64(limiter.limit)
+        limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / fractionOfSecond
+        limiter.previousTime = currentTime
+
+        if limiter.delta >= 1.0D {
+            limiter.limitReached = true
+            limiter.delta = limiter.delta - 1.0D
+        } else {
+            limiter.limitReached = false
+        }
+    } else {
+        limiter.limitReached = true
+    }
+
+    loopLimiter = limiter
+}
+// *************************************
+// END - Loop Limiter
+// *************************************
+
+
+// *************************************
+// Start - Sprites
+// *************************************
+type Sprite struct {
+    x f64
+    y f64
+    vx f64
+    vy f64
+    width i32
+    height i32
+    textureSheet []i32
+}
+
+func createYarnBallSprite()(yarnBall Sprite) {
+    var sprite Sprite
+    sprite.x = 10.0D
+    sprite.y = 10.0D
+    sprite.vx = 10.0D
+    sprite.vy = 10.0D
+    sprite.width = 32
+    sprite.height = 32
+
+    //todo... something not working here... FIX!
+    sprite.textureSheet = append(sprite.textureSheet, getTexture("textures/yarnBall0.png"))
+    sprite.textureSheet = append(sprite.textureSheet, getTexture("textures/yarnBall1.png"))
+    sprite.textureSheet = append(sprite.textureSheet, getTexture("textures/yarnBall2.png"))
+    sprite.textureSheet = append(sprite.textureSheet, getTexture("textures/yarnBall3.png"))
+
+    yarnBall = sprite
+}
+
+func initSprites()(out []Sprite) {
+    var sprites []Sprite
+    sprites = append(sprites, createYarnBallSprite())
+
+    out = sprites
+}
+// *************************************
+// End - Sprites
+// *************************************
+
+
+// *************************************
+// Start - Game
+// *************************************
 type Window struct {
     Height i32
     Width i32
 }
 
-func initGlfw (window Window) {
+func initGlfw(window Window) {
     glfw.Init()
     glfw.WindowHint(glfw.Resizable, glfw.False)
     glfw.CreateWindow("window", window.Width, window.Height, "Game Test - CX")
     glfw.MakeContextCurrent("window")
 }
 
+func getTexture(textureFileName str)(texture i32) {
+    var workingDirectory str = os.GetWorkingDirectory()
+
+    texture = gl.NewTexture(str.concat(workingDirectory, textureFileName))
+}
+
 func startGame() {
-    var fpsManager FpsManager
-    var fpsTicker f64 = 1.0D
-    fpsManager = createFpsManager(fpsTicker)
+    var program i32 = gl.CreateProgram()
+    var mainLoopTracker LoopTracker = createLoopTracker(1.0D, "Main loop")
+    var fpsTracker LoopTracker = createLoopTracker(1.0D, "Render loop")
+    var fpsLimiter LoopLimiter = createLoopLimiter(60, true)
+
+    var sprites []Sprite = initSprites()
+
+    //todo... not rely on this...
+    var texture i32
+    texture = gl.NewTexture(str.concat(os.GetWorkingDirectory(), "textures/yarnBall0.png"))
+
+    gl.LinkProgram(program)
 
     for bool.not(glfw.ShouldClose("window")) {
-        fpsManager = updateFpsManager(fpsManager)
+        var currentTime f64 = glfw.GetTime()
 
-        glfw.PollEvents()
-        glfw.SwapBuffers("window")
+        mainLoopTracker = updateLoopTracker(mainLoopTracker, currentTime)
+        fpsLimiter = updateLoopLimiter(fpsLimiter, currentTime)
+        
+        mainGameUpdate(mainLoopTracker.deltaTime)
+        
+        if fpsLimiter.limitReached {
+            fpsTracker = updateLoopTracker(fpsTracker, currentTime)
+            
+            gl.UseProgram(program)
+            gl.ClearColor(0.0, 0.0, 0.0, 1.0)
+            gl.Clear(gl.COLOR_BUFFER_BIT)
+            gl.Enable(gl.TEXTURE_2D)
+
+            gl.LoadIdentity()
+            gl.Translatef(0.0, 0.0, 0.0)
+            gl.BindTexture(gl.TEXTURE_2D, texture) //todo... use dynamic sprite
+            gl.Scalef(0.05, 0.05, 0.0)
+
+            gl.Begin(gl.QUADS)
+            gl.TexCoord2d(0.0D, 0.0D)
+            gl.Vertex3f(-1.0, 1.0, 0.0)
+            gl.TexCoord2d(1.0D, 0.0D)
+            gl.Vertex3f(1.0, 1.0, 0.0)
+            gl.TexCoord2d(1.0D, 1.0D)
+            gl.Vertex3f(1.0, -1.0, 0.0)
+            gl.TexCoord2d(0.0D, 1.0D)
+            gl.Vertex3f(-1.0, -1.0, 0.0)
+            gl.End()
+            
+            glfw.PollEvents()
+            glfw.SwapBuffers("window")
+        }
     }
+}
+
+func mainGameUpdate(deltaTime f64) {
+
 }
 
 func main() {
@@ -77,6 +215,10 @@ func main() {
     window = Window {Height: 748,Width: 1024}
 
     initGlfw(window)
+    gl.Init()
 
     startGame()
 }
+// *************************************
+// End - Game
+// *************************************
