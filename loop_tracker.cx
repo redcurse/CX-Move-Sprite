@@ -11,9 +11,9 @@ type LoopTracker struct {
     showLoopsPerSecond bool
 }
 
-func createLoopTracker(ticker f64, loopName str)(loopTracker LoopTracker) {
+func createLoopTracker(ticker f64, name str)(loopTracker LoopTracker) {
     var tracker LoopTracker
-    tracker.loopName = loopName
+    tracker.loopName = name
     tracker.timer = 1.0D
     tracker.ticker = ticker
     tracker.fpsCounter = 0
