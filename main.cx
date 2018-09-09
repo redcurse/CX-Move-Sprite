@@ -19,8 +19,8 @@ type Animation struct {
 type Sprite struct {
     x f32
     y f32
-    vx f32
-    vy f32
+    velocity f32
+    acceleration f32
     width f32
     height f32
     animations []Animation
@@ -45,8 +45,8 @@ func createYarnBallSprite()(yarnBall Sprite) {
     var sprite Sprite
     sprite.x = 0.0
     sprite.y = -0.9
-    sprite.vx = 0.1
-    sprite.vy = 0.1
+    sprite.velocity = 0.0
+    sprite.acceleration = 1.0
     sprite.width = 32.0
     sprite.height = 32.0
 
@@ -67,7 +67,7 @@ func initSprites()(out []Sprite) {
 
     out = sprites
 }
-// *************************************
+// *0************************************
 // End - Sprites
 // *************************************
 
@@ -75,24 +75,27 @@ func initSprites()(out []Sprite) {
 // *************************************
 // Sttart - Scenes
 // *************************************
-type Scene struct {
-    name str
-    sprites []Sprite
-    loopLimiter LoopLimiter.LoopLimiter
-    loopTracker LoopTracker.LoopTracker
-    currentTime f64
-}
+//type Scene struct {
+//    name str
+//    sprites []Sprite
+//    loopLimiter LoopLimiter.LoopLimiter
+//    loopTracker LoopTracker.LoopTracker
+//    currentTime f64
+//}
 
-func createScene(name str, sprites []Sprite)(scene Scene) {
-    scene.name = name
-    scene.sprites = sprites
-    scene.loopTracker = LoopTracker.create(1.0D, "main")
-    scene.loopLimiter = LoopLimiter.create(60, true)
-}
+//func createScene(name str, sprites []Sprite)(scene Scene) {
+//    scene.name = name
+//    scene.sprites = sprites
+//    scene.loopTracker = LoopTracker.create(1.0D, "main")
+//    scene.loopLimiter = LoopLimiter.create(60, true)
+//}
 // *************************************
 // End - Scenes
 // *************************************
 
+var currentTime f64
+var loopLimiter LoopLimiter.LoopLimiter = LoopLimiter.create(60, true)
+var loopTracker LoopTracker.LoopTracker = LoopTracker.create(1.0D, "Main")
 
 // *************************************
 // Start - Game
@@ -110,30 +113,31 @@ func initGlfw(window Window) {
 }
 
 func startGame() {
-    var sprites []Sprite = initSprites() 
-    var scene Scene = createScene("main", sprites)
-
-    mainGameLoop(scene)
+    mainGameLoop()
 }
 
-func mainGameLoop(gameScene Scene)(out Scene) {
+func mainGameLoop()() {
+    //var sprites []Sprite = initSprites() 
+    //var scene Scene = createScene("main", sprites)
     var program i32 = gl.CreateProgram()
-    var scene Scene = gameScene
+    var yarnBall Sprite = createYarnBallSprite()
 
     for bool.not(glfw.ShouldClose("window")) {
-        scene.currentTime = glfw.GetTime()
-        scene.loopLimiter = LoopLimiter.update(scene.loopLimiter, scene.currentTime)
-        scene.loopTracker = LoopTracker.update(scene.loopTracker, scene.currentTime)
+        currentTime = glfw.GetTime()
+        loopLimiter = LoopLimiter.update(loopLimiter, currentTime)
+        loopTracker = LoopTracker.update(loopTracker, currentTime)
 
         //scene = updateScene(scene)
 
-        if scene.loopLimiter.limitReached {
+        yarnBall = updateSprite(yarnBall)
+
+        if loopLimiter.limitReached {
             gl.UseProgram(program)
             gl.ClearColor(0.0, 0.0, 0.0, 1.0)
             gl.Clear(gl.COLOR_BUFFER_BIT)
             gl.Enable(gl.TEXTURE_2D)
 
-            drawSprites(scene.sprites)
+            drawSprite(yarnBall)
                         
             glfw.PollEvents()
             glfw.SwapBuffers("window")
@@ -141,31 +145,39 @@ func mainGameLoop(gameScene Scene)(out Scene) {
     }
 }
 
-func updateScene(scene Scene)(out Scene) {
-
-    scene.sprites = updateSprites(scene.sprites)
-
-    out = scene
+func updateSprite(sprite Sprite)(out Sprite) {
+    sprite.velocity = sprite.velocity + sprite.acceleration * f64.f32(loopTracker.deltaTime)
+    sprite.y = sprite.y + sprite.velocity * f64.f32(loopTracker.deltaTime)
+    out = sprite
 }
 
-func updateSprites(sprites []Sprite)(out []Sprite) {}
+//func updateScene(scene Scene)(out Scene) {
+//
+//    scene.sprites = updateSprites(scene.sprites)
+//
+//    out = scene
+//}
 
-func drawSprites(sprites []Sprite) {
+//func updateSprites(sprites []Sprite)(out []Sprite) {}
+
+func drawSprites(sprites []Sprite) {for i := 0; i < len(sprites); i = i + 1 {
+        drawSprite(sprites[i])
+    }
+}
+
+func drawSprite(sprite Sprite) {
     var sprite Sprite
     var width f32
     var height f32
     var animation Animation
     var frame i32
 
-    for i := 0; i < len(sprites); i = i + 1 {
-        sprite = sprites[i]
-        width = sprite.width
-        height = sprite.height
-        animation = sprite.animations[0]
-        frame = animation.frames[animation.currentFrame]
+    width = sprite.width
+    height = sprite.height
+    animation = sprite.animations[0]
+    frame = animation.frames[animation.currentFrame]
 
-        draw(sprite.x, sprite.y, width, height, frame)
-    }
+    draw(sprite.x, sprite.y, width, height, frame)
 }
 
 func draw(xCoord f32, yCoord f32, width f32, height f32, texture i32) {
