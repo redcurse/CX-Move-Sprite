@@ -8,14 +8,14 @@ type LoopLimiter struct {
     enabled bool
 }
 
-func createLoopLimiter(limit i32, enabled bool)(loopLimiter LoopLimiter) {
+func create(limit i32, enabled bool)(loopLimiter LoopLimiter) {
     var limiter LoopLimiter
     limiter.limit = limit
     limiter.enabled = enabled
     loopLimiter = limiter
 }
 
-func updateLoopLimiter(limiter LoopLimiter, currentTime f64)(loopLimiter LoopLimiter) {
+func update(limiter LoopLimiter, currentTime f64)(loopLimiter LoopLimiter) {
     if limiter.enabled {
         var fractionOfSecond f64 = 1.0D / i32.f64(limiter.limit)
         limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / fractionOfSecond

@@ -36,7 +36,7 @@ func createAnimation(frames []i32, fps i32)(out Animation) {
     var animation Animation
     animation.frames = frames
     animation.currentFrame = 0
-    animation.fpsLimiter = LoopLimiter.createLoopLimiter(fps, true)
+    animation.fpsLimiter = LoopLimiter.create(fps, true)
 
     out = animation
 }
@@ -73,6 +73,28 @@ func initSprites()(out []Sprite) {
 
 
 // *************************************
+// Sttart - Scenes
+// *************************************
+type Scene struct {
+    name str
+    sprites []Sprite
+    loopLimiter LoopLimiter.LoopLimiter
+    loopTracker LoopTracker.LoopTracker
+    currentTime f64
+}
+
+func createScene(name str, sprites []Sprite)(scene Scene) {
+    scene.name = name
+    scene.sprites = sprites
+    scene.loopTracker = LoopTracker.create(1.0D, "main")
+    scene.loopLimiter = LoopLimiter.create(60, true)
+}
+// *************************************
+// End - Scenes
+// *************************************
+
+
+// *************************************
 // Start - Game
 // *************************************
 type Window struct {
@@ -88,31 +110,30 @@ func initGlfw(window Window) {
 }
 
 func startGame() {
-    var program i32 = gl.CreateProgram()
-    var mainLoopTracker LoopTracker.LoopTracker = LoopTracker.createLoopTracker(1.0D, "Main")
-    var fpsTracker LoopTracker.LoopTracker = LoopTracker.createLoopTracker(1.0D, "FPS")
-    var fpsLimiter LoopLimiter.LoopLimiter = LoopLimiter.createLoopLimiter(60, true)
-    var animationLimiter LoopLimiter.LoopLimiter = LoopLimiter.createLoopLimiter(2, true)
-
     var sprites []Sprite = initSprites() 
+    var scene Scene = createScene("main", sprites)
+
+    mainGameLoop(scene)
+}
+
+func mainGameLoop(gameScene Scene)(out Scene) {
+    var program i32 = gl.CreateProgram()
+    var scene Scene = gameScene
 
     for bool.not(glfw.ShouldClose("window")) {
-        var currentTime f64 = glfw.GetTime()
+        scene.currentTime = glfw.GetTime()
+        scene.loopLimiter = LoopLimiter.update(scene.loopLimiter, scene.currentTime)
+        scene.loopTracker = LoopTracker.update(scene.loopTracker, scene.currentTime)
 
-        mainLoopTracker = LoopTracker.updateLoopTracker(mainLoopTracker, currentTime)
-        fpsLimiter = LoopLimiter.updateLoopLimiter(fpsLimiter, currentTime)
-        
-        //mainGameUpdate(mainLoopTracker.deltaTime)
-        
-        if fpsLimiter.limitReached {
-            fpsTracker = LoopTracker.updateLoopTracker(fpsTracker, currentTime)
-            
+        //scene = updateScene(scene)
+
+        if scene.loopLimiter.limitReached {
             gl.UseProgram(program)
             gl.ClearColor(0.0, 0.0, 0.0, 1.0)
             gl.Clear(gl.COLOR_BUFFER_BIT)
             gl.Enable(gl.TEXTURE_2D)
 
-            drawSprites(sprites, currentTime)
+            drawSprites(scene.sprites)
                         
             glfw.PollEvents()
             glfw.SwapBuffers("window")
@@ -120,7 +141,32 @@ func startGame() {
     }
 }
 
-//func mainGameUpdate(deltaTime f64) {}
+func updateScene(scene Scene)(out Scene) {
+
+    scene.sprites = updateSprites(scene.sprites)
+
+    out = scene
+}
+
+func updateSprites(sprites []Sprite)(out []Sprite) {}
+
+func drawSprites(sprites []Sprite) {
+    var sprite Sprite
+    var width f32
+    var height f32
+    var animation Animation
+    var frame i32
+
+    for i := 0; i < len(sprites); i = i + 1 {
+        sprite = sprites[i]
+        width = sprite.width
+        height = sprite.height
+        animation = sprite.animations[0]
+        frame = animation.frames[animation.currentFrame]
+
+        draw(sprite.x, sprite.y, width, height, frame)
+    }
+}
 
 func draw(xCoord f32, yCoord f32, width f32, height f32, texture i32) {
     gl.LoadIdentity()
@@ -139,25 +185,6 @@ func draw(xCoord f32, yCoord f32, width f32, height f32, texture i32) {
     gl.TexCoord2d(0.0D, 1.0D)
     gl.Vertex2f(-1.0, -1.0)
     gl.End()
-}
-
-func drawSprites(sprites []Sprite, currentTime f64)(out LoopLimiter) {
-
-    for i := 0; i < len(sprites); i = i + 1 {
-        var sprite Sprite
-        var width f32
-        var height f32
-        var animation Animation
-        var frame i32
-
-        sprite = sprites[i]
-        width = sprite.width
-        height = sprite.height
-        animation = sprite.animations[0]
-        frame = animation.frames[animation.currentFrame]
-
-        draw(sprite.x, sprite.y, width, height, frame)
-    }
 }
 
 func main() {
