@@ -65,37 +65,32 @@ func spriteLastLeft(sprite Sprite)(out f32) {
 }
 
 func createYarnBallSprite()(yarnBall Sprite) {
-    var sprite Sprite
-    sprite.acceleration = 1.0
-    sprite.maxVelocity = 1.0
-    sprite.width = 64.0 / 1024.0
-    sprite.height = 64.0 / 768.0
+    yarnBall.acceleration = 1.0
+    yarnBall.maxVelocity = 1.0
+    yarnBall.width = 64.0 / 1024.0
+    yarnBall.height = 64.0 / 768.0
 
-    sprite.frames = append(sprite.frames, getTexture("textures/yarnBall0.png"))
-    sprite.frames = append(sprite.frames, getTexture("textures/yarnBall1.png"))
-    sprite.frames = append(sprite.frames, getTexture("textures/yarnBall2.png"))
-    sprite.frames = append(sprite.frames, getTexture("textures/yarnBall3.png"))
-
-    yarnBall = sprite
+    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall0.png"))
+    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall1.png"))
+    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall2.png"))
+    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall3.png"))
 }
 
 func createSynthCatSprite()(synthCat Sprite) {
-    var sprite Sprite
-    sprite.acceleration = 1.0
-    sprite.maxVelocity = 1.0
-    sprite.width = 200.0 / 1024.0
-    sprite.height = 200.0 / 768.0
+    synthCat.acceleration = 1.0
+    synthCat.maxVelocity = 1.0
+    synthCat.width = 200.0 / 1024.0
+    synthCat.height = 200.0 / 768.0
 
-    sprite.frames = append(sprite.frames, getTexture("textures/synth_cat.png"))
-
-    synthCat = sprite
+    synthCat.frames = append(synthCat.frames, getTexture("textures/synth_cat.png"))
 }
 
-func initSprites()(out []Sprite) {
-    var sprites []Sprite
-    sprites = append(sprites, createYarnBallSprite())
+func createBrickSprite(position Vector2D)(brick Sprite) {
+    brick.position = position
+    brick.width = 128.0 / 1024.0
+    brick.height = 64.0 / 768.0
 
-    out = sprites
+    brick.frames = append(brick.frames, getTexture("textures/brick.png"))
 }
 // *************************************
 // End - Sprites
@@ -111,6 +106,7 @@ var loopTracker LoopTracker.LoopTracker = LoopTracker.create(1.0D, "Main")
 
 var synthCat Sprite
 var yarnBall Sprite
+var bricks []Sprite
 
 var upPressed bool
 var downPressed bool
@@ -167,10 +163,9 @@ func startGame() {
 
 func mainGameLoop()() {
     var program i32 = gl.CreateProgram()
-    synthCat  = createSynthCatSprite()
-    yarnBall = createYarnBallSprite()
+    initSprites()
     synthCat.position.y = 0.8
-    yarnBall.position.x = 0.6
+    yarnBall.position.x = 0.0
     yarnBall.position.y = -0.8
     yarnBall.velocity.y = 0.3
     yarnBall.velocity.x = 0.6
@@ -183,6 +178,7 @@ func mainGameLoop()() {
 
         synthCat = updatePlayer(synthCat)
         yarnBall = updateBall(yarnBall)
+        checkBrickCollisions()
 
         synthCat = updateSprite(synthCat)
         yarnBall = updateSprite(yarnBall)
@@ -195,10 +191,34 @@ func mainGameLoop()() {
 
             synthCat = drawSprite(synthCat)
             yarnBall = drawSprite(yarnBall)
+
+            for i:=0; i<len(bricks); i=i+1{
+                drawSprite(bricks[i])
+            }
                         
             glfw.PollEvents()
             glfw.SwapBuffers("window")
         }
+    }
+}
+
+func initSprites() {
+    synthCat  = createSynthCatSprite()
+    yarnBall = createYarnBallSprite()
+
+    initBricks()
+}
+
+func initBricks() {
+    var startPos Vector2D
+    var increment f32
+    increment = 128.0 / 1024.0
+    startPos.x = -0.55
+    startPos.y = -0.6
+
+    for i:=0; i<8; i=i+1 {
+        startPos.x = startPos.x + increment
+        bricks = append(bricks, createBrickSprite(startPos))
     }
 }
 
@@ -244,6 +264,57 @@ func updateBall(ball Sprite)(out Sprite) {
 
     ball.lastPosition = ball.position
     out = ball
+}
+
+func checkBrickCollisions() {
+    var collision bool
+    var brick Sprite
+
+    for i:=0; i<len(bricks); i=i+1 {
+        brick = bricks[i]
+        collision = checkCollision(brick, yarnBall)
+
+        if collision == true {
+            if spriteTop(brick) < yarnBall.position.y {
+                str.print("Top hit")
+                yarnBall.position.y = spriteTop(brick) + yarnBall.height/2.0
+                yarnBall.velocity.y = yarnBall.velocity.y*-1.0
+            } else if spriteBottom(brick) > yarnBall.position.y {
+                str.print("Bottom hit")
+                yarnBall.position.y = spriteBottom(brick) - yarnBall.height/2.0
+                yarnBall.velocity.y = yarnBall.velocity.y*-1.0
+            } else if brick.position.x < yarnBall.position.x {
+                str.print("Right hit")
+                yarnBall.position.x = spriteRight(brick) + yarnBall.width/2.0
+                yarnBall.velocity.x = yarnBall.velocity.x*-1.0
+            } else if brick.position.x > yarnBall.position.x {
+                str.print("Left hit")
+                yarnBall.position.x = spriteLeft(brick) - yarnBall.width/2.0
+                yarnBall.velocity.x = yarnBall.velocity.x*-1.0
+            }
+        }
+    }
+}
+
+func checkCollision(spriteA Sprite, spriteB Sprite)(collision bool) {
+    var d1x f32
+    var d1y f32
+    var d2x f32
+    var d2y f32
+
+    collision = true
+
+    d1x = spriteLeft(spriteB) - spriteRight(spriteA)
+    d1y = spriteBottom(spriteB) - spriteTop(spriteA)
+    d2x = spriteLeft(spriteA) - spriteRight(spriteB)
+    d2y = spriteBottom(spriteA) - spriteTop(spriteB)
+
+    if d1x >= 0.0 || d1y >= 0.0{
+        collision = false
+    }
+    if d2x >= 0.0 || d2y >= 0.0 {
+        collision = false
+    }
 }
 
 func updateSprite(sprite Sprite)(out Sprite) {
