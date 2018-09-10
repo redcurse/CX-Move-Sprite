@@ -169,9 +169,9 @@ func mainGameLoop()() {
     var program i32 = gl.CreateProgram()
     synthCat  = createSynthCatSprite()
     yarnBall = createYarnBallSprite()
-    synthCat.position.y = -0.8
-    yarnBall.position.x = 0.2
-    yarnBall.position.y = 0.8
+    synthCat.position.y = 0.8
+    yarnBall.position.x = 0.6
+    yarnBall.position.y = -0.8
     yarnBall.velocity.y = 0.3
     yarnBall.velocity.x = 0.6
 
@@ -235,9 +235,9 @@ func updateBall(ball Sprite)(out Sprite) {
         }
     }
 
-    if spriteBottom(ball) < spriteTop(synthCat) && spriteLastBottom(ball) > spriteLastTop(synthCat) {
+    if spriteTop(ball) > spriteBottom(synthCat) && spriteLastTop(ball) < spriteLastBottom(synthCat) {
         if spriteRight(ball) >= spriteLeft(synthCat) && spriteLeft(ball) <= spriteRight(synthCat) {
-            ball.position.y = spriteTop(synthCat) + ball.height / 2.0
+            ball.position.y = spriteBottom(synthCat) - ball.height / 2.0
             ball.velocity.y = ball.velocity.y*-1.0
         }
     }
