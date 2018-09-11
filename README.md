@@ -41,3 +41,6 @@ to the address below and/or dm me some kind words on [telegram](https://t.me/red
   - Skycoin Address: EBqmtuEyK6z4BgmjFoXPiSas1dydxdPqAf
 
 Thank you Skycoin community!
+
+## Disclamer
+I am not part of the team responsible for the development of the CX programming language neither do I claim some sort of affiliation with the Skycoin Project.
