@@ -1,6 +1,9 @@
 # SynthCat Brick Breaker!
 
 SynthCat Brick Breaker is a game where you knock a ball of yarn to break bricks as SynthCat.
+<p float="left">
+  <img height="425" width="425" src="screenshots/preview.gif">
+</p>
 
 # What is CX?
 CX is a general purpose, interpreted and compiled programming language, with a very strict type system and a syntax similar to Golang's. CX provides a new programming paradigm based on the concept of affordances, where the user can ask the programming language at runtime what can be done with a CX object (functions, expressions, packages, etc.), and interactively or automatically choose one of the affordances to be applied.
