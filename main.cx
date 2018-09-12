@@ -66,8 +66,8 @@ func spriteLastLeft(sprite Sprite)(out f32) {
 }
 
 func createBackgroundSprite()(background Sprite) {
-    background.width = 1600.0 / 1024.0
-    background.height = 1600.0 / 768.0
+    background.width = 1024.0 / 384.0
+    background.height = 768.0 / 384.0
 
     background.frames = append(background.frames, getTexture("textures/background.png"))
 }
@@ -75,30 +75,27 @@ func createBackgroundSprite()(background Sprite) {
 func createYarnBallSprite()(yarnBall Sprite) {
     yarnBall.acceleration = 1.0
     yarnBall.maxVelocity = 1.0
-    yarnBall.width = 64.0 / 1024.0
-    yarnBall.height = 64.0 / 768.0
+    yarnBall.width = 32.0 / 384.0
+    yarnBall.height = 32.0 / 384.0
 
-    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall0.png"))
-    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall1.png"))
-    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall2.png"))
-    yarnBall.frames = append(yarnBall.frames, getTexture("textures/yarnBall3.png"))
+    yarnBall.frames = append(yarnBall.frames, getTexture("textures/coin.png"))
 }
 
 func createSynthCatSprite()(synthCat Sprite) {
     synthCat.acceleration = 1.0
     synthCat.maxVelocity = 1.0
-    synthCat.width = 200.0 / 1024.0
-    synthCat.height = 200.0 / 768.0
+    synthCat.width = 100.0 / 384.0
+    synthCat.height = 100.0 / 384.0
 
     synthCat.frames = append(synthCat.frames, getTexture("textures/synth_cat.png"))
 }
 
 func createBrickSprite(position Vector2D)(brick Sprite) {
     brick.position = position
-    brick.width = 128.0 / 1024.0
-    brick.height = 64.0 / 768.0
+    brick.width = 64.0 / 384.0
+    brick.height = 32.0 / 384.0
 
-    brick.frames = append(brick.frames, getTexture("textures/brick.png"))
+    brick.frames = append(brick.frames, getTexture("textures/cloud.png"))
 }
 // *************************************
 // End - Sprites
@@ -108,7 +105,7 @@ func createBrickSprite(position Vector2D)(brick Sprite) {
 // Start - Game
 // *************************************
 var currentTime f64
-var loopLimiter LoopLimiter.LoopLimiter = LoopLimiter.create(60, true)
+var loopLimiter LoopLimiter.LoopLimiter = LoopLimiter.create(120, true)
 var animationLimiter LoopLimiter.LoopLimiter = LoopLimiter.create(5, true)
 var loopTracker LoopTracker.LoopTracker = LoopTracker.create(1.0D, "Main")
 
@@ -422,7 +419,7 @@ func draw(xCoord f32, yCoord f32, width f32, height f32, texture i32) {
 
 func main() {
     var window Window
-    window = Window {Width: 1024, Height: 768}
+    window = Window {Width: 1280, Height: 1024}
 
     initGlfw(window)
     gl.Init()
