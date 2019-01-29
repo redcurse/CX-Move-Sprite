@@ -195,7 +195,6 @@ func mainGameLoop()() {
         if loopLimiter.limitReached {
             gl.UseProgram(program)
             gl.Clear(i32.bitor(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT))
-            //gl.ClearColor(0.0, 0.0, 0.0, 1.0)
             gl.Enable(gl.TEXTURE_2D)
             gl.Disable(gl.DITHER)
             gl.Disable(gl.POINT_SMOOTH)
@@ -223,12 +222,13 @@ func mainGameLoop()() {
             gl.MatrixMode(gl.MODELVIEW)
             gl.LoadIdentity()
 
-            background = drawSprite(background)
-            synthCat = drawSprite(synthCat)
-            yarnBall = drawSprite(yarnBall)
+            drawSprite(background)
+            drawSprite(synthCat)
+            drawSprite(yarnBall)
+
+            var brick Sprite
 
             for i:=0; i<len(bricks); i=i+1{
-                var brick Sprite
                 brick = bricks[i]
                 if brick.brickHit == false {
                     drawSprite(brick)
@@ -374,8 +374,7 @@ func drawSprites(sprites []Sprite) {for i := 0; i < len(sprites); i = i + 1 {
     }
 }
 
-func drawSprite(sprite Sprite)(out Sprite) {
-    var sprite Sprite
+func drawSprite(sprite Sprite) {
     var width f32
     var height f32
     var frame i32
@@ -394,8 +393,6 @@ func drawSprite(sprite Sprite)(out Sprite) {
     frame = sprite.frames[sprite.currentFrame]
 
     draw(sprite.position.x, sprite.position.y, width, height, frame)
-
-    out = sprite
 }
 
 func draw(xCoord f32, yCoord f32, width f32, height f32, texture i32) {
